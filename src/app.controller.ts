@@ -1,12 +1,18 @@
-import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
+import { Controller, Inject } from '@nestjs/common';
+import { ClientProxy, EventPattern } from '@nestjs/microservices';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(@Inject('RABBITMQ_SERVICE') private readonly client: ClientProxy) {}
 
-  @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  @Get('send')
+  async sendMessage() {
+    const message = { text: 'Hello from RabbitMQ Microservice' };
+    return this.client.emit('message_printed', message);
+  }
+
+  @EventPattern('message_printed')
+  handleMessagePrinted(data: Record<string, unknown>) {
+    console.log('Received message:', data);
   }
 }
